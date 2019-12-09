@@ -2,14 +2,11 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const Parser = require('rss-parser');
 const { feed } = 'https://twitrss.me/twitter_user_to_rss/?user=yewzofficial';
-const { prefix, token } = require('./config.json');
+const { prefix, token, roles_channel, role_message, reaction_roles } = require('./config.json');
 const config = require("./config.json");
-
-
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 const cooldowns = new Discord.Collection();
-
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
@@ -19,32 +16,46 @@ for (const file of commandFiles) {
 
 client.once('ready', () => {
 	console.log('Ready!');
-console.log(client.channels.size);
-const tweetChannel = client.channels.get('631973964780142652');
+	const tweetChannel = client.channels.get('631973964780142652');
+	client.user.setActivity('YEWZ', { type: 'LISTENING'});
 });
-
 
 client.login(token);
 
-//const { tweetChannel } = client.channels.get('631973964780142652');
+client.on('messageReactionAdd', (reaction, user) => {
+	if(!user) return;
+	if(user.bot) return;
+	if(!reaction.message.channel.guild) return;
+
+	reaction_roles.forEach(reactionPair => {
+		if(reactionPair.emote === reaction.emoji.name) {
+			console.log(reactionPair.name);
+			let role = reaction.message.guild.roles.find(r => r.name === reactionPair.name);
+			reaction.message.guild.member(user).addRole(role).catch(console.error);
+		}
+	});
+	//let role = reaction.message.guild.roles.find(r => r.name == r)
+
+});
+
 let parser = new Parser();
 let latestTweet;
 setInterval(function() {
 	(async () => {
-try {
-	let feed = await parser.parseURL('https://twitrss.me/twitter_user_to_rss/?user=yewzofficial');
-	console.log(feed.title);
-	var tweet = feed.items[2];
+		try {
+			let feed = await parser.parseURL('https://twitrss.me/twitter_user_to_rss/?user=yewzofficial');
+			console.log(feed.title);
+			var tweet = feed.items[2];
 
-	if(tweet.link != latestTweet){
-		client.channels.get('631973964780142652').send(tweet.link);
-		latestTweet = tweet.link;
-	}
-} catch (e) {
-	console.log(e);
-}
+			if(tweet.link != latestTweet){
+				client.channels.get('631973964780142652').send(tweet.link);
+				latestTweet = tweet.link;
+			}
+		} catch (e) {
+			console.log(e);
+		}
 
-})();
+		})();
 }, 60 * 1000 * 15);
 
 client.on('message', message => {
