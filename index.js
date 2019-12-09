@@ -38,6 +38,20 @@ client.on('messageReactionAdd', (reaction, user) => {
 
 });
 
+client.on('messageReactionRemove', (reaction, user) => {
+	if(!user) return;
+	if(user.bot) return;
+	if(!reaction.message.channel.guild) return;
+
+	reaction_roles.forEach(reactionPair => {
+		if(reactionPair.emote === reaction.emoji.name) {
+			console.log(reactionPair.name);
+			let role = reaction.message.guild.roles.find(r => r.name === reactionPair.name);
+			reaction.message.guild.member(user).removeRole(role).catch(console.error);
+		}
+	});
+})
+
 let parser = new Parser();
 let latestTweet;
 setInterval(function() {
